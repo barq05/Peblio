@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{--pri:#01539d;--acc:#f8c535;--bg:#f8f2ea;--ink:#0b2349;--mute:#5d6b85;--line:#e6dccd;--card:#fffdf9;--bad:#ee4b3b;--ok:#2e9c61;--inp:#fff}
+[hidden]{display:none!important}
 :root[data-theme="dark"]{--bg:#0b1a33;--ink:#f4efe7;--mute:#a4b3cf;--line:#223d6b;--card:#112548;--inp:#0b1a33;color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -85,11 +86,11 @@ const DS={brand:'Peblio',logo:'',
  hero:{title:'Peblio',sub:'ألوان جواش مصنوعة لكل من يحب الرسم. زاهية وثابتة وسهلة الاستخدام.',cta:'تسوّق الآن',img:'',blobs:true},
  colors:{pri:'#01539d',acc:'#f8c535',bg:'#f8f2ea',ink:'#0b2349'},
  features:[{t:'ألوان ثابتة',d:'صبغات عالية التركيز تدوم على الورق.'},{t:'شحن لكل المحافظات',d:'توصيل لحد باب البيت في أنحاء مصر.'},{t:'دفع مرن',d:'كاش عند الاستلام أو محفظة أو إنستاباي.'}],
- reviews:[],
+ reviews:[],jobs:[],
  faq:[{q:'إزاي أعرف إن طلبي اتسجل؟',a:'هتظهر لك رسالة تأكيد برقم الطلب، وهنتواصل معاك على رقمك.'},{q:'إيه طرق الدفع المتاحة؟',a:'بتظهر في السلة حسب المتاح حاليًا.'},{q:'ينفع أستخدم كود خصم؟',a:'أيوه، اكتب الكود في السلة قبل تأكيد الطلب.'}],
- titles:{best:'الأكثر طلبًا',products:'كل المنتجات',reviews:'آراء عملائنا',faq:'أسئلة شائعة',support:'الدعم الفني'},
+ titles:{best:'الأكثر طلبًا',products:'كل المنتجات',reviews:'آراء عملائنا',faq:'أسئلة شائعة',support:'الدعم الفني',jobs:'انضم لفريقنا'},
  footer:'ألوان جواش مصنوعة بحب',wa:'',
- order:['hero','features','best','products','reviews','faq','support'],hide:{}};
+ order:['hero','features','best','products','reviews','faq','jobs','support'],hide:{}};
 let TH='light';try{TH=localStorage.getItem('peblio-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){}
 function applyTheme(c){const r=document.documentElement.style,d=TH==='dark';document.documentElement.dataset.theme=TH;r.setProperty('--pri',d?`color-mix(in srgb,${c.pri} 72%,#fff)`:c.pri);r.setProperty('--acc',c.acc);if(d){r.removeProperty('--bg');r.removeProperty('--ink')}else{r.setProperty('--bg',c.bg);r.setProperty('--ink',c.ink)}}
 let site=DS,P=[],PAY=[],FF='all',FQ='',cart={},kc=null,QV=0;
@@ -101,7 +102,7 @@ const eff=p=>Math.round(p.p*(1-(p.sale||0)/100));
 const prod=id=>P.find(p=>p.id==id);
 const PV=/[?&]preview=1/.test(location.search);
 const api=o=>PV?Promise.resolve({error:'ده وضع المعاينة فقط، مفيش إرسال فعلي.'}):fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(o)}).then(r=>r.json());
-const merge=s=>({...DS,...s,hero:{...DS.hero,...s.hero},colors:{...DS.colors,...s.colors},titles:{...DS.titles,...s.titles},hide:{...s.hide}});
+const merge=s=>{const o={...DS,...s,hero:{...DS.hero,...s.hero},colors:{...DS.colors,...s.colors},titles:{...DS.titles,...s.titles},hide:{...s.hide}};o.order=[...(s.order||DS.order)];DS.order.forEach(k=>{if(!o.order.includes(k))o.order.push(k)});return o};
 const pic=p=>p.img?`<img src="${esc(p.img)}" alt="${esc(p.n)}" loading="lazy">`:`<div class="ph"></div>`;
 const pcard=p=>`<article class="pc"><div class="t" data-qvw="${p.id}">${pic(p)}</div><div class="b">${p.best?'<span class="bdg">الأكثر طلبًا</span>':''}<b>${esc(p.n)}</b><small>${esc(p.d)}</small><div class="pr">${fmt(eff(p))}${p.sale?`<s>${fmt(p.p)}</s>`:''}</div>${p.sale?`<small class="low">خصم ${num(p.sale)}٪</small>`:''}<button class="btn" data-add="${p.id}" ${p.q>0?'':'disabled'}>${p.q>0?'أضف للسلة':'نفد المخزون'}</button></div></article>`;
 const SEC={
@@ -111,6 +112,7 @@ const SEC={
  products:()=>`<section class="sec" id="products"><h2>${esc(site.titles.products)}</h2><div class="chips"><input id="fq" placeholder="ابحث عن منتج" value="${esc(FQ)}"><button data-ff="all" class="${FF==='all'?'on':''}">الكل</button><button data-ff="best" class="${FF==='best'?'on':''}">الأكثر طلبًا</button><button data-ff="sale" class="${FF==='sale'?'on':''}">عليها خصم</button></div><div class="grid" id="allg"></div></section>`,
  reviews:()=>site.reviews.length?`<section class="sec" id="reviews"><h2>${esc(site.titles.reviews)}</h2><div class="feat">${site.reviews.map(r=>`<div class="card"><b>${esc(r.n)}</b><span>${esc(r.t)}</span></div>`).join('')}</div></section>`:'',
  faq:()=>site.faq.length?`<section class="sec" id="faq"><h2>${esc(site.titles.faq)}</h2>${site.faq.map(f=>`<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</section>`:'',
+ jobs:()=>`<section class="sec" id="jobs"><div class="card"><h2 style="margin-top:0">${esc(site.titles.jobs)}</h2>${site.jobs.length?`<div class="feat" style="margin-bottom:14px">${site.jobs.map(j=>`<div class="card"><b>${esc(j.t)}</b><span>${esc(j.d)}</span></div>`).join('')}</div>`:'<p style="color:var(--mute)">ابعت لنا بياناتك وهنتواصل معاك لما تتوفر وظيفة مناسبة.</p>'}<div class="row"><input id="jn" placeholder="الاسم"><input id="jph" placeholder="رقم الموبايل" inputmode="tel"></div><div class="row"><input id="jr" list="jl" placeholder="الوظيفة المتقدم لها"><datalist id="jl">${site.jobs.map(j=>`<option value="${esc(j.t)}">`).join('')}</datalist></div><div class="row"><input id="jm" placeholder="نبذة عن خبرتك أو رابط سيرتك الذاتية" style="flex:3 1 240px"><button class="btn" id="addj">إرسال الطلب</button></div></div></section>`,
  support:()=>`<section class="sec" id="support"><div class="card"><h2 style="margin-top:0">${esc(site.titles.support)}</h2><div class="row"><input id="tn" placeholder="اسمك"><input id="tph" placeholder="رقم الموبايل" inputmode="tel"></div><div class="row"><input id="tm" placeholder="اكتب سؤالك أو مشكلتك" style="flex:3 1 240px"><button class="btn" id="addt">إرسال</button></div></div></section>`};
 function gridR(){
   const L=P.filter(p=>(!FQ||(p.n+' '+p.d).includes(FQ))&&(FF==='all'||(FF==='best'&&p.best)||(FF==='sale'&&p.sale>0)));
@@ -167,6 +169,11 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('#addt'))return;const n=$('tn').value.trim(),m=$('tm').value.trim();
   if(!n||!m){alert('اكتب اسمك ورسالتك.');return}
   api({a:'support',name:n,phone:$('tph').value.trim(),message:m}).then(r=>{if(r.error){alert(r.error);return}['tn','tph','tm'].forEach(i=>$(i).value='');alert('وصلتنا رسالتك، وهنرد عليك في أقرب وقت.')}).catch(()=>alert('تعذر الإرسال. حاول تاني.'));
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#addj'))return;const n=$('jn').value.trim(),p=$('jph').value.trim(),r=$('jr').value.trim();
+  if(!n||!p||!r){alert('اكتب اسمك ورقم موبايلك والوظيفة المتقدم لها.');return}
+  api({a:'job',name:n,phone:p,role:r,message:$('jm').value.trim()}).then(x=>{if(x.error){alert(x.error);return}['jn','jph','jr','jm'].forEach(i=>$(i).value='');alert('وصل طلبك، وهنتواصل معاك لو فيه فرصة مناسبة. شكرًا لاهتمامك.')}).catch(()=>alert('تعذر الإرسال. حاول تاني.'));
 });
 function load(){
   return fetch(API).then(r=>r.json()).then(r=>{site=merge(r.site||{});P=r.products||[];PAY=r.pay||[];Object.keys(cart).forEach(id=>{if(!prod(id))delete cart[id]});render()}).catch(()=>{render()});
